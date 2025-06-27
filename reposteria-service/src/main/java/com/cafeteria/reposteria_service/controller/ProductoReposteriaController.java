@@ -3,6 +3,8 @@ package com.cafeteria.reposteria_service.controller;
 import com.cafeteria.reposteria_service.model.ProductoReposteria;
 import com.cafeteria.reposteria_service.service.ProductoReposteriaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,9 +23,16 @@ public class ProductoReposteriaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoReposteria> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<ProductoReposteria>> obtenerPorId(@PathVariable Long id) {
         return productoService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
+                .map(producto -> {
+                    EntityModel<ProductoReposteria> recurso = EntityModel.of(producto);
+                    recurso.add(WebMvcLinkBuilder.linkTo(
+                            WebMvcLinkBuilder.methodOn(ProductoReposteriaController.class).obtenerPorId(id)).withSelfRel());
+                    recurso.add(WebMvcLinkBuilder.linkTo(
+                            WebMvcLinkBuilder.methodOn(ProductoReposteriaController.class).listarTodos()).withRel("todos-los-productos"));
+                    return ResponseEntity.ok(recurso);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
